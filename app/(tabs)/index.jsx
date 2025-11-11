@@ -12,6 +12,8 @@ export default function HomeScreen() {
     { id: 7, name: "Travel", emoji: "✈️" },
     { id: 8, name: "Pets", emoji: "🐶" },
     { id: 10, name: "Finance", emoji: "💰" },
+    { id: 11, name: "Finance", emoji: "💰" },
+    { id: 12, name: "Finance", emoji: "💰" },
   ];
 
   return (

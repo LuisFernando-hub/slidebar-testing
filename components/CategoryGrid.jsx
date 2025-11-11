@@ -1,46 +1,68 @@
 
 import styled from 'styled-components/native';
-import { Dimensions } from 'react-native';
-import { useState } from 'react';
+import { Dimensions, FlatList } from 'react-native';
+import { useRef, useState } from 'react';
 
 const { width } = Dimensions.get('window');
 
 export default function CategorySlider({ categories, size = 300 }) {
     const [page, setPage] = useState(0);
-
+    const flatListRef = useRef(null);
 
     const itemsPerPage = 6;
     const totalPages = Math.ceil(categories.length / itemsPerPage);
 
 
     const handleNext = () => {
-        setPage((prev) => (prev + 1) % totalPages);
+        const nextPage = (page + 1) % totalPages;
+        flatListRef.current.scrollToIndex({ index: nextPage, animated: true });
+        setPage(nextPage);
     };
 
 
     const handlePrev = () => {
-        setPage((prev) => (prev - 1 + totalPages) % totalPages);
+        const prevPage = (page - 1 + totalPages) % totalPages;
+        flatListRef.current.scrollToIndex({ index: prevPage, animated: true });
+        setPage(prevPage);
     };
 
 
-    const startIndex = page * itemsPerPage;
-    const visibleItems = categories.slice(startIndex, startIndex + itemsPerPage);
+    const pages = [];
+    for (let i = 0; i < totalPages; i++) {
+        const start = i * itemsPerPage;
+        const slice = categories.slice(start, start + itemsPerPage);
+        pages.push(slice);
+    }
 
+    const handleScrollEnd = (e) => {
+        const newPage = Math.round(e.nativeEvent.contentOffset.x / width);
+        setPage(newPage);
+    };
+
+    const renderPage = ({ item }) => (
+        <PageContainer style={{ height: size }}>
+            <CategoryGrid>
+                {item.map((cat) => (
+                <CategoryItem key={cat.id}>
+                    <Emoji>{cat.emoji}</Emoji>
+                    <CategoryName>{cat.name}</CategoryName>
+                </CategoryItem>
+                ))}
+            </CategoryGrid>
+        </PageContainer>
+    );
 
     return (
         <Container style={{ height: size }}>
-            <CategoryGrid
-                data={visibleItems}
-                keyExtractor={(item) => item.id.toString()}
-                numColumns={3}
-                columnWrapperStyle={{ justifyContent: 'space-around' }}
-                contentContainerStyle={{ flexGrow: 1 }}
-                renderItem={({ item }) => (
-                    <CategoryItem>
-                        <Emoji>{item.emoji}</Emoji>
-                        <CategoryName>{item.name}</CategoryName>
-                    </CategoryItem>
-                )}
+            <FlatList
+                ref={flatListRef}
+                data={pages}
+                keyExtractor={(_, i) => i.toString()}
+                renderItem={renderPage}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={handleScrollEnd}
             />
 
 
@@ -73,7 +95,12 @@ const Container = styled.View`
 `;
 
 
-const CategoryGrid = styled.FlatList``;
+const CategoryGrid = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 82%;
+  padding: 10px 0;
+`;
 
 
 const CategoryItem = styled.View`
@@ -131,4 +158,10 @@ const ArrowRight = styled.TouchableOpacity`
 const ArrowText = styled.Text`
     color: #fff;
     font-size: 20px;
+`;
+
+const PageContainer = styled.View`
+  width: ${width}px;
+  justify-content: center;
+  align-items: center;
 `;
